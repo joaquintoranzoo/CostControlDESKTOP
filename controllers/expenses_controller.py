@@ -1,5 +1,6 @@
-import matplotlib.pyplot as plt
+import tkinter as tk
 from tkinter import messagebox, simpledialog
+import matplotlib.pyplot as plt
 
 gastos = []
 subcategorias_otros = {}
@@ -20,6 +21,10 @@ def ingresar_gasto(entry_nombre, entry_cantidad, categoria_var, resumen_label):
         messagebox.showerror("Error", "Por favor, ingrese una cantidad válida.")
         return
 
+    if limite_mensual is not None and (sum(cantidad for _, cantidad, _ in gastos) + cantidad) > limite_mensual:
+        messagebox.showwarning("Advertencia", f"Superaste el límite establecido para el mes de {simpledialog.askstring('Mes', 'Ingrese el mes')}")
+        return
+
     if categoria == "Otros":
         subcategoria = simpledialog.askstring("Subcategoría", "Ingrese la subcategoría para 'Otros':")
         if not subcategoria:
@@ -33,16 +38,13 @@ def ingresar_gasto(entry_nombre, entry_cantidad, categoria_var, resumen_label):
     gasto = (nombre_gasto, cantidad, categoria)
     gastos.append(gasto)
 
-    if limite_mensual and total_gastos() > limite_mensual:
-        messagebox.showwarning("Advertencia", "Superaste el límite establecido para el mes.")
-
     entry_nombre.delete(0, 'end')
     entry_cantidad.delete(0, 'end')
+    mostrar_resumen(resumen_label)
 
-    mostrar_resumen_label(resumen_label)
-
-def mostrar_resumen_label(resumen_label):
+def mostrar_resumen(resumen_label):
     resumen_categorias = {"Comida": 0, "Transporte": 0, "Entretenimiento": 0, "Otros": 0}
+    total_general = 0
 
     for gasto in gastos:
         nombre, cantidad, categoria = gasto
@@ -51,38 +53,37 @@ def mostrar_resumen_label(resumen_label):
             subcategorias_otros[subcategoria] += cantidad
         else:
             resumen_categorias[categoria] += cantidad
+        total_general += cantidad
 
     resumen = "Resumen de Gastos:\n"
     for categoria, total in resumen_categorias.items():
         resumen += f"{categoria}: ${total:.2f}\n"
+
     if subcategorias_otros:
         resumen += "\nDetalle de 'Otros':\n"
         for subcategoria, total in subcategorias_otros.items():
             resumen += f"  - {subcategoria}: ${total:.2f}\n"
 
+    resumen += f"\nTotal general: ${total_general:.2f}"
     resumen_label.config(text=resumen)
-
-def total_gastos():
-    return sum(cantidad for _, cantidad, _ in gastos)
 
 def mostrar_grafico():
     categorias = {}
-    for gasto in gastos:
-        nombre, cantidad, categoria = gasto
+    for _, cantidad, categoria in gastos:
         if categoria not in categorias:
             categorias[categoria] = 0
         categorias[categoria] += cantidad
 
-    labels = categorias.keys()
-    valores = categorias.values()
-
-    plt.figure(figsize=(6, 6))
-    plt.pie(valores, labels=labels, autopct='%1.1f%%', startangle=90)
+    plt.figure(figsize=(10, 7))
+    plt.pie(categorias.values(), labels=categorias.keys(), autopct='%1.1f%%', startangle=140)
     plt.title('Distribución de Gastos')
     plt.show()
 
 def establecer_limite():
     global limite_mensual
-    limite_mensual = simpledialog.askfloat("Límite de Gastos", "Ingrese el límite de gastos para este mes:")
-    if limite_mensual is None:
+    limite = simpledialog.askfloat("Establecer Límite", "Ingrese el límite mensual:")
+    if limite is None or limite <= 0:
         messagebox.showerror("Error", "Debe ingresar un límite válido.")
+        return
+    limite_mensual = limite
+    messagebox.showinfo("Éxito", f"Límite mensual establecido en ${limite_mensual:.2f}.")
