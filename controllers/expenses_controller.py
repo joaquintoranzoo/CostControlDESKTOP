@@ -3,13 +3,15 @@ from tkinter import messagebox, simpledialog
 import matplotlib.pyplot as plt
 
 gastos = []
-subcategorias_otros = {}
 limite_mensual = None
+moneda_actual = "ARS"
+conversion_rates = {"ARS": 1, "USD": 370, "EUR": 395}
 
-def ingresar_gasto(entry_nombre, entry_cantidad, categoria_var, resumen_label):
+def ingresar_gasto(entry_nombre, entry_cantidad, categoria_var, moneda_var, resumen_text):
     nombre_gasto = entry_nombre.get()
     cantidad = entry_cantidad.get()
     categoria = categoria_var.get()
+    moneda = moneda_var.get()
 
     if not nombre_gasto or not cantidad:
         messagebox.showerror("Error", "Por favor, complete todos los campos.")
@@ -21,55 +23,44 @@ def ingresar_gasto(entry_nombre, entry_cantidad, categoria_var, resumen_label):
         messagebox.showerror("Error", "Por favor, ingrese una cantidad válida.")
         return
 
-    if limite_mensual is not None and (sum(cantidad for _, cantidad, _ in gastos) + cantidad) > limite_mensual:
-        messagebox.showwarning("Advertencia", f"Superaste el límite establecido para el mes de {simpledialog.askstring('Mes', 'Ingrese el mes')}")
-        return
+    # Conversión de moneda
+    cantidad_ars = cantidad * conversion_rates[moneda]
 
-    if categoria == "Otros":
-        subcategoria = simpledialog.askstring("Subcategoría", "Ingrese la subcategoría para 'Otros':")
-        if not subcategoria:
-            messagebox.showerror("Error", "Debe ingresar un nombre para la subcategoría.")
-            return
-        categoria = f"Otros - {subcategoria}"
-
-        if subcategoria not in subcategorias_otros:
-            subcategorias_otros[subcategoria] = 0
-
-    gasto = (nombre_gasto, cantidad, categoria)
+    if limite_mensual is not None and (sum(cantidad for _, cantidad, _ in gastos) + cantidad_ars) > limite_mensual:
+        messagebox.showwarning("Advertencia", f"Superaste el límite mensual establecido. El gasto se ha agregado igualmente.")
+    
+    # Agregar el gasto
+    gasto = (nombre_gasto, cantidad_ars, categoria, moneda)
     gastos.append(gasto)
 
+    # Limpiar los campos
     entry_nombre.delete(0, 'end')
     entry_cantidad.delete(0, 'end')
-    mostrar_resumen(resumen_label)
 
-def mostrar_resumen(resumen_label):
+    # Mostrar resumen actualizado
+    mostrar_resumen(resumen_text)
+
+def mostrar_resumen(resumen_text):
     resumen_categorias = {"Comida": 0, "Transporte": 0, "Entretenimiento": 0, "Otros": 0}
     total_general = 0
 
+    resumen_text.delete(1.0, 'end')
+
     for gasto in gastos:
-        nombre, cantidad, categoria = gasto
-        if categoria.startswith("Otros - "):
-            subcategoria = categoria.split(" - ")[1]
-            subcategorias_otros[subcategoria] += cantidad
-        else:
-            resumen_categorias[categoria] += cantidad
+        nombre, cantidad, categoria, moneda = gasto
+        resumen_categorias[categoria] += cantidad
         total_general += cantidad
+        resumen_text.insert(tk.END, f"{nombre} - {cantidad:.2f} ARS ({moneda}) en {categoria}\n")
 
-    resumen = "Resumen de Gastos:\n"
+    resumen_text.insert(tk.END, "\nResumen por categoría:\n")
     for categoria, total in resumen_categorias.items():
-        resumen += f"{categoria}: ${total:.2f}\n"
-
-    if subcategorias_otros:
-        resumen += "\nDetalle de 'Otros':\n"
-        for subcategoria, total in subcategorias_otros.items():
-            resumen += f"  - {subcategoria}: ${total:.2f}\n"
-
-    resumen += f"\nTotal general: ${total_general:.2f}"
-    resumen_label.config(text=resumen)
+        resumen_text.insert(tk.END, f"{categoria}: ${total:.2f} ARS\n")
+    
+    resumen_text.insert(tk.END, f"\nTotal general: ${total_general:.2f} ARS\n")
 
 def mostrar_grafico():
     categorias = {}
-    for _, cantidad, categoria in gastos:
+    for _, cantidad, categoria, _ in gastos:
         if categoria not in categorias:
             categorias[categoria] = 0
         categorias[categoria] += cantidad
@@ -81,9 +72,13 @@ def mostrar_grafico():
 
 def establecer_limite():
     global limite_mensual
-    limite = simpledialog.askfloat("Establecer Límite", "Ingrese el límite mensual:")
+    limite = simpledialog.askfloat("Establecer Límite", "Ingrese el límite mensual en ARS:")
     if limite is None or limite <= 0:
         messagebox.showerror("Error", "Debe ingresar un límite válido.")
         return
     limite_mensual = limite
-    messagebox.showinfo("Éxito", f"Límite mensual establecido en ${limite_mensual:.2f}.")
+    messagebox.showinfo("Éxito", f"Límite mensual establecido en ${limite_mensual:.2f} ARS.")
+
+def limpiar_resumen(resumen_text):
+    resumen_text.delete(1.0, 'end')
+    messagebox.showinfo("Resumen", "El resumen ha sido limpiado.")

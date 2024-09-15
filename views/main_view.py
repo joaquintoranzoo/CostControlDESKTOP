@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
-from controllers.expenses_controller import ingresar_gasto, mostrar_resumen, mostrar_grafico, establecer_limite
+from controllers.expenses_controller import ingresar_gasto, mostrar_resumen, mostrar_grafico, establecer_limite, limpiar_resumen
 from PIL import Image, ImageTk
 
 def iniciar_interfaz():
@@ -10,7 +10,7 @@ def iniciar_interfaz():
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     window_width = 400
-    window_height = 500
+    window_height = 550
     position_top = int(screen_height / 2 - window_height / 2)
     position_right = int(screen_width / 2 - window_width / 2)
     root.geometry(f"{window_width}x{window_height}+{position_right}+{position_top}")
@@ -23,6 +23,7 @@ def iniciar_interfaz():
     logo_label.grid(row=0, column=0, columnspan=2, pady=10)
 
     categoria_var = tk.StringVar(value="Comida")
+    moneda_var = tk.StringVar(value="ARS")
 
     ttk.Label(root, text="Nombre del gasto:").grid(row=1, column=0, padx=10, pady=10, sticky="W")
     entry_nombre = ttk.Entry(root)
@@ -36,13 +37,19 @@ def iniciar_interfaz():
     categoria_menu = ttk.OptionMenu(root, categoria_var, "Comida", "Comida", "Transporte", "Entretenimiento", "Otros")
     categoria_menu.grid(row=3, column=1, padx=10, pady=10)
 
-    ttk.Button(root, text="Ingresar Gasto", command=lambda: ingresar_gasto(entry_nombre, entry_cantidad, categoria_var, resumen_label)).grid(row=4, column=0, columnspan=2, padx=10, pady=10)
-    ttk.Button(root, text="Mostrar Resumen", command=lambda: mostrar_resumen(root)).grid(row=5, column=0, columnspan=2, padx=10, pady=10)
-    ttk.Button(root, text="Mostrar Gráfico de Gastos", command=mostrar_grafico).grid(row=6, column=0, columnspan=2, padx=10, pady=10)
-    ttk.Button(root, text="Establecer Límite", command=establecer_limite).grid(row=7, column=0, columnspan=2, padx=10, pady=10)
-    ttk.Button(root, text="Salir", command=root.quit).grid(row=8, column=0, columnspan=2, padx=10, pady=10)
+    ttk.Label(root, text="Moneda:").grid(row=4, column=0, padx=10, pady=10, sticky="W")
+    moneda_menu = ttk.OptionMenu(root, moneda_var, "ARS", "ARS", "USD", "EUR")
+    moneda_menu.grid(row=4, column=1, padx=10, pady=10)
 
-    resumen_label = ttk.Label(root, text="", font=("Arial", 10))
-    resumen_label.grid(row=9, column=0, columnspan=2, padx=10, pady=10)
+    ttk.Button(root, text="Ingresar Gasto", command=lambda: ingresar_gasto(entry_nombre, entry_cantidad, categoria_var, moneda_var, resumen_text)).grid(row=5, column=0, columnspan=2, padx=10, pady=10)
+    ttk.Button(root, text="Mostrar Resumen", command=lambda: mostrar_resumen(resumen_text)).grid(row=6, column=0, columnspan=2, padx=10, pady=10)
+    ttk.Button(root, text="Mostrar Gráfico de Gastos", command=mostrar_grafico).grid(row=7, column=0, columnspan=2, padx=10, pady=10)
+    ttk.Button(root, text="Establecer Límite", command=establecer_limite).grid(row=8, column=0, columnspan=2, padx=10, pady=10)
+    ttk.Button(root, text="Limpiar Resumen", command=lambda: limpiar_resumen(resumen_text)).grid(row=9, column=0, columnspan=2, padx=10, pady=10)
+    ttk.Button(root, text="Salir", command=root.quit).grid(row=10, column=0, columnspan=2, padx=10, pady=10)
+
+    # Resumen actualizado en tiempo real
+    resumen_text = tk.Text(root, height=10, width=40)
+    resumen_text.grid(row=11, column=0, columnspan=2, padx=10, pady=10)
 
     root.mainloop()
