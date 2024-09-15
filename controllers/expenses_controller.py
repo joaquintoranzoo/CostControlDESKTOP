@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 gastos = []
 limite_mensual = None
 moneda_actual = "ARS"
-conversion_rates = {"ARS": 1, "USD": 370, "EUR": 395}
+conversion_rates = {"ARS": 1, "USD": 1450, "EUR": 1500}
 
 def ingresar_gasto(entry_nombre, entry_cantidad, categoria_var, moneda_var, resumen_text):
     nombre_gasto = entry_nombre.get()
